@@ -1,0 +1,27 @@
+---
+title: "P8106_HW1"
+author: "Ziyi Zhao"
+date: "2/24/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+
+```
+
+
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+
