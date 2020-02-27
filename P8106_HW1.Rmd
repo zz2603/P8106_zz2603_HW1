@@ -9,12 +9,21 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
+library(summarytools)
+library(stargazer)
+library(leaps)
 
 ```
 
 
+# Part a
+
+* Fit a linear model using least squares on the training data and calculate the mean square error using the test data.
+
 
 ```{r}
+sol_train = read_csv("./solubility_train.csv") %>% janitor::clean_names()
+
 
 ```
 
