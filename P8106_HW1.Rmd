@@ -12,17 +12,22 @@ library(tidyverse)
 library(summarytools)
 library(stargazer)
 library(leaps)
+library(caret)
+library(FNN)
+library(ModelMetrics)
+library(Rcpp)
+library(microbenchmark)
 
 ```
 
 
-# Part a
+# Part a: Fit a linear model using least squares on the training data and calculate the mean square error using the test data.
 
-* Fit a linear model using least squares on the training data and calculate the mean square error using the test data.
-
+We first look at the summary statistics of predictors and the response.
 
 ```{r}
 sol_train = read_csv("./solubility_train.csv") %>% janitor::clean_names()
+sol_test = read_csv("./solubility_test.csv") %>% janitor::clean_names()
 
 st_options(plain.ascii = FALSE,
            style = "rmarkdown",
@@ -31,14 +36,53 @@ st_options(plain.ascii = FALSE,
            subtitle.emphasis = FALSE)
 
 dfSummary(sol_train[,-229])
+dfSummary(sol_test[,-229])
+
+sol_all <- rbind(sol_train,sol_test)
+dfSummary(sol_all[,-229])
+
+```
+
+We fit linear least square model to train dataset and calculate MSE using test dataset.
+
+```{r}
+linear_fit <- lm(solubility~.,data=sol_train)
+
+linear_pred <- predict(linear_fit,sol_test)
+
+mse(sol_test$solubility,linear_pred)
+
+# KNN
+mse_knn <- rep(0,19)
+for (i in 2:20) {
+  pred_knn <- knn.reg(train = sol_train[,1:228], test = sol_test[,1:228],
+                     y = sol_train$solubility,k=i)
+  mse_knn[i-1] <- mse(sol_test$solubility,pred_knn$pred)
+}
+
+min(mse_knn)
+
+knn_k <- c(2:20)
+tibble(knn_k,mse_knn) %>% 
+  ggplot(aes(x=knn_k,y=mse_knn))+
+  geom_point()+
+  labs(title = "MSE change by different k",
+       x = "k",
+       y = "mse")
 
 
 ```
 
 
+# Part b: Fit a ridge regression model on the training data, with λ chosen by cross-validation. Report the test error
 
 ```{r}
 
 ```
+
+
+
+
+
 
 
