@@ -17,6 +17,8 @@ library(FNN)
 library(ModelMetrics)
 library(Rcpp)
 library(microbenchmark)
+library(glmnet)
+library(corrplot)
 
 ```
 
@@ -76,7 +78,16 @@ tibble(knn_k,mse_knn) %>%
 
 # Part b: Fit a ridge regression model on the training data, with λ chosen by cross-validation. Report the test error
 
-```{r}
+Creat a correlation plot to see how predictors are correlated
+
+```{r fig.width=25,fig.height=25}
+predictor_mtx <- model.matrix(solubility~.,sol_all)[,-1]
+
+
+
+corrplot(cor(predictor_mtx))
+
+
 
 ```
 
