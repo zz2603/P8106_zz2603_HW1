@@ -19,6 +19,7 @@ library(Rcpp)
 library(microbenchmark)
 library(glmnet)
 library(corrplot)
+library(plotmo)
 
 ```
 
@@ -78,22 +79,73 @@ tibble(knn_k,mse_knn) %>%
 
 # Part b: Fit a ridge regression model on the training data, with λ chosen by cross-validation. Report the test error
 
-Creat a correlation plot to see how predictors are correlated
+Creat a correlation plot on total datasets (training + test) to see how predictors are correlated
 
 ```{r fig.width=25,fig.height=25}
 predictor_mtx <- model.matrix(solubility~.,sol_all)[,-1]
 
-
+response_vtr <- sol_all$solubility
 
 corrplot(cor(predictor_mtx))
 
+```
+
+From the correlation plot, we can observe that there are some positively correlated predictors, shown as dark-blue dots in the plot.
+
+Let's fit a ridge regression model on the training data, with lambda chosen by cross-validation
+
+```{r fig.height=20,fig.width=25}
+predictor_mtx <- model.matrix(solubility~.,sol_train)[,-1]
+response_vtr <- sol_train$solubility
+
+ridge.mod <- glmnet(predictor_mtx,response_vtr,standardize = TRUE,
+                    alpha = 0,
+                    lambda = exp(seq(-5,8,length=100)))
+mat.coef <- coef(ridge.mod)
+dim(mat.coef)
+
+# trace plot
+plot_glmnet(ridge.mod,xvar = "rlambda",label = 228)
+
+```
+
+The trace plot show how coefficients change as log lambda decreases.
+
+Use cross validation to determine the optimal value of lambda. Then, use the best lambda to fit the ridge regression to test dataset and get MSE.
+
+```{r}
+set.seed(7)
+cv.ridge <- cv.glmnet(predictor_mtx,response_vtr,type.measure = "mse",
+                      alpha=0,lambda = exp(seq(-5,1,length=100)))
+plot(cv.ridge)
+
+best.lambda <- cv.ridge$lambda.min
+best.lambda
+
+# coefficients of the final model
+predict(ridge.mod,s=best.lambda,type = "coefficients")
+
+
+predictor_mtx_test <- model.matrix(solubility~.,sol_test)[,-1]
+ridge_pred <- predict(ridge.mod,s=best.lambda,newx = predictor_mtx_test)
+mse(sol_test$solubility,ridge_pred[,1])
 
 
 ```
 
+The optimal lambda acquired from cross-validation is `r best.lambda`.
+
+The mean squared error we got is `r mse(sol_test$solubility,ridge_pred[,1])`.
+
+# Fit a lasso model on the training data, with λ chosen by cross-validation. Report the test error, along with the number of non-zero coeﬃcient estimates.
+
+```{r}
 
 
 
+
+
+```
 
 
 
