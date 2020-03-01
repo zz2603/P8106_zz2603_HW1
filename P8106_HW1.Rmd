@@ -3,6 +3,7 @@ title: "P8106_HW1"
 author: "Ziyi Zhao"
 date: "2/24/2020"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
 ---
@@ -301,7 +302,7 @@ summary(resamp)
 
 * The MSE of fitting linear model to test dataset is `r mse(sol_test$solubility,linear_pred)`.The MSE by fitting linear error using caret is `r mse(sol_test$solubility,pred.lm)`.
 
-* The MSE of fitting ridge model to test dataset is `r mse(sol_test$solubility,pred.ridge)`. MSE using Caret is `r mse(sol_test$solubility,pred.ridge)`.
+* The MSE of fitting ridge model to test dataset is `r mse(sol_test$solubility,ridge_pred[,1])`. MSE using Caret is `r mse(sol_test$solubility,pred.ridge)`.
 
 * The MSE of fitting lasso model to test dataset is `r mse(sol_test$solubility,lasso_pred[,1])`. MSE using Caret is `r mse(sol_test$solubility,pred.lasso)`.
 
