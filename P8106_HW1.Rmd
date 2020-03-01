@@ -2,7 +2,9 @@
 title: "P8106_HW1"
 author: "Ziyi Zhao"
 date: "2/24/2020"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -46,6 +48,22 @@ sol_all <- rbind(sol_train,sol_test)
 dfSummary(sol_all[,-229])
 
 ```
+
+Creat a correlation plot on total datasets (training + test) to see how predictors are correlated
+
+```{r fig.width=25,fig.height=25}
+predictor_mtx <- model.matrix(solubility~.,sol_all)[,-1]
+predictor_mtx_test <- model.matrix(solubility~.,sol_test)[,-1]
+
+response_vtr <- sol_all$solubility
+
+ctrl1 <- trainControl(method = "repeatedcv",number = 10,repeats = 5)
+
+corrplot(cor(predictor_mtx))
+
+```
+
+From the correlation plot, we can observe that there are some positively correlated predictors, shown as dark-blue dots in the plot.
 
 We fit linear least square model to train dataset and calculate MSE using test dataset.
 
@@ -94,7 +112,7 @@ pred.lm <- predict(lm.fit$finalModel,
 
 mse(sol_test$solubility,pred.lm)
 
-(lm.info <- postResample(predict(ridge.fit,predictor_mtx_test),
+(lm.info <- postResample(predict(lm.fit,predictor_mtx_test),
                          sol_test$solubility))
 ```
 
@@ -103,19 +121,6 @@ The mean squared error by fitting linear error using caret is `r mse(sol_test$so
 The purpose of using caret is to help discussion of four model.
 
 # Part b: Fit a ridge regression model on the training data, with λ chosen by cross-validation. Report the test error
-
-Creat a correlation plot on total datasets (training + test) to see how predictors are correlated
-
-```{r fig.width=25,fig.height=25}
-predictor_mtx <- model.matrix(solubility~.,sol_all)[,-1]
-
-response_vtr <- sol_all$solubility
-
-corrplot(cor(predictor_mtx))
-
-```
-
-From the correlation plot, we can observe that there are some positively correlated predictors, shown as dark-blue dots in the plot.
 
 Let's fit a ridge regression model on the training data, with lambda chosen by cross-validation
 
@@ -150,8 +155,6 @@ best.lambda
 # coefficients of the final model
 predict(ridge.mod,s=best.lambda,type = "coefficients")
 
-
-predictor_mtx_test <- model.matrix(solubility~.,sol_test)[,-1]
 ridge_pred <- predict(ridge.mod,s=best.lambda,newx = predictor_mtx_test)
 mse(sol_test$solubility,ridge_pred[,1])
 
@@ -165,8 +168,6 @@ The mean squared error we got is `r mse(sol_test$solubility,ridge_pred[,1])`.
 Use caret to re-do ridge to see change of MSE.
 
 ```{r}
-ctrl1 <- trainControl(method = "repeatedcv",number = 10,repeats = 5)
-
 set.seed(7)
 ridge.fit <- train(predictor_mtx,response_vtr,
                    method = "glmnet",
@@ -268,7 +269,7 @@ The M is `r ncomp.cv`.
 set.seed(7)
 pcr.fit <- train(predictor_mtx,response_vtr,
                  method = "pcr",
-                 tuneGrid = data.frame(1:228),
+                 tuneGrid = data.frame(ncomp=1:228),
                  trControl = ctrl1,
                  preProc=c("center","scale"))
 
@@ -298,13 +299,13 @@ summary(resamp)
 
 ```
 
-* The MSE of fitting linear model is `r mse(sol_test$solubility,linear_pred)`.
+* The MSE of fitting linear model to test dataset is `r mse(sol_test$solubility,linear_pred)`.
 
-* The MSE of fitting ridge model is `r mse(sol_test$solubility,pred.ridge)`. MSE using Caret is `r mse(sol_test$solubility,pred.ridge)`.
+* The MSE of fitting ridge model to test dataset is `r mse(sol_test$solubility,pred.ridge)`. MSE using Caret is `r mse(sol_test$solubility,pred.ridge)`.
 
-* The MSE of fitting lasso model is `r mse(sol_test$solubility,lasso_pred[,1])`. MSE using Caret is `r mse(sol_test$solubility,pred.lasso)`.
+* The MSE of fitting lasso model to test dataset is `r mse(sol_test$solubility,lasso_pred[,1])`. MSE using Caret is `r mse(sol_test$solubility,pred.lasso)`.
 
-* The MSE of fitting PCR is `r mse(sol_test$solubility,pcr_pred)`. MSE using Caret is `r mse(sol_test$solubility,pred.pcr)`.
+* The MSE of fitting PCR to test dataset is `r mse(sol_test$solubility,pcr_pred)`. MSE using Caret is `r mse(sol_test$solubility,pred.pcr)`.
 
 
 
