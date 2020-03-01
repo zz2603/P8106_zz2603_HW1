@@ -49,6 +49,8 @@ dfSummary(sol_all[,-229])
 
 We fit linear least square model to train dataset and calculate MSE using test dataset.
 
+We also compute KNN from k=2 to k=20.
+
 ```{r}
 linear_fit <- lm(solubility~.,data=sol_train)
 
@@ -77,6 +79,9 @@ tibble(knn_k,mse_knn) %>%
 
 ```
 
+The mean squared error of fitting linear model is `r mse(sol_test$solubility,linear_pred)`.
+
+Use Caret to fit linear model to see the change of mean squared error.
 
 ```{r}
 set.seed(7)
@@ -93,8 +98,9 @@ mse(sol_test$solubility,pred.lm)
                          sol_test$solubility))
 ```
 
+The mean squared error by fitting linear error using caret is `r mse(sol_test$solubility,pred.lm)`.
 
-
+The purpose of using caret is to help discussion of four model.
 
 # Part b: Fit a ridge regression model on the training data, with λ chosen by cross-validation. Report the test error
 
@@ -256,6 +262,8 @@ mse(sol_test$solubility,pcr_pred)
 
 The mean square error of fitting PCR is `r mse(sol_test$solubility,pcr_pred)`.
 
+The M is `r ncomp.cv`.
+
 ```{r}
 set.seed(7)
 pcr.fit <- train(predictor_mtx,response_vtr,
@@ -277,6 +285,8 @@ mse(sol_test$solubility,pred.pcr)
 
 The mean square error of fitting PCR using caret is `r mse(sol_test$solubility,pred.pcr)`.
 
+The M is `r pcr.fit$bestTune$ncomp`.
+
 # Brieﬂy discuss the results obtained in (a)∼(d).
 
 ```{r}
@@ -287,6 +297,14 @@ resamp <- resamples(list(lm = lm.fit,
 summary(resamp)
 
 ```
+
+* The MSE of fitting linear model is `r mse(sol_test$solubility,linear_pred)`.
+
+* The MSE of fitting ridge model is `r mse(sol_test$solubility,pred.ridge)`. MSE using Caret is `r mse(sol_test$solubility,pred.ridge)`.
+
+* The MSE of fitting lasso model is `r mse(sol_test$solubility,lasso_pred[,1])`. MSE using Caret is `r mse(sol_test$solubility,pred.lasso)`.
+
+* The MSE of fitting PCR is `r mse(sol_test$solubility,pcr_pred)`. MSE using Caret is `r mse(sol_test$solubility,pred.pcr)`.
 
 
 
