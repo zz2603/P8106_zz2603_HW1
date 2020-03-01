@@ -20,6 +20,7 @@ library(microbenchmark)
 library(glmnet)
 library(corrplot)
 library(plotmo)
+library(pls)
 
 ```
 
@@ -77,6 +78,24 @@ tibble(knn_k,mse_knn) %>%
 ```
 
 
+```{r}
+set.seed(7)
+lm.fit <- train(predictor_mtx,response_vtr,
+                method = "lm",
+                trControl = ctrl1)
+
+pred.lm <- predict(lm.fit$finalModel,
+                   newdata = data.frame(predictor_mtx_test))
+
+mse(sol_test$solubility,pred.lm)
+
+(lm.info <- postResample(predict(ridge.fit,predictor_mtx_test),
+                         sol_test$solubility))
+```
+
+
+
+
 # Part b: Fit a ridge regression model on the training data, with λ chosen by cross-validation. Report the test error
 
 Creat a correlation plot on total datasets (training + test) to see how predictors are correlated
@@ -119,7 +138,7 @@ cv.ridge <- cv.glmnet(predictor_mtx,response_vtr,type.measure = "mse",
                       alpha=0,lambda = exp(seq(-5,1,length=100)))
 plot(cv.ridge)
 
-best.lambda <- cv.ridge$lambda.min
+best.lambda <- cv.ridge$lambda.1se
 best.lambda
 
 # coefficients of the final model
@@ -137,15 +156,139 @@ The optimal lambda acquired from cross-validation is `r best.lambda`.
 
 The mean squared error we got is `r mse(sol_test$solubility,ridge_pred[,1])`.
 
-# Fit a lasso model on the training data, with λ chosen by cross-validation. Report the test error, along with the number of non-zero coeﬃcient estimates.
+Use caret to re-do ridge to see change of MSE.
 
 ```{r}
+ctrl1 <- trainControl(method = "repeatedcv",number = 10,repeats = 5)
 
+set.seed(7)
+ridge.fit <- train(predictor_mtx,response_vtr,
+                   method = "glmnet",
+                   tuneGrid = expand.grid(alpha=0,
+                                        lambda=exp(seq(-5,1,length=100))),
+                   trControl = ctrl1)
 
+plot(ridge.fit,xTrans = function(predictor_mtx)log(predictor_mtx))
 
+ridge.fit$bestTune
+coef(ridge.fit$finalModel,ridge.fit$bestTune$lambda)
 
+pred.ridge <- predict(ridge.fit,s=ridge.fit$bestTune$lambda,
+                      newdata = predictor_mtx_test)
+
+mse(sol_test$solubility,pred.ridge)
+
+(ridge_info <- postResample(predict(ridge.fit,predictor_mtx_test),
+                           sol_test$solubility))
 
 ```
+
+The mean square error of fitting ridge using carot is `r mse(sol_test$solubility,pred.ridge)`.
+
+# Fit a lasso model on the training data, with λ chosen by cross-validation. Report the test error, along with the number of non-zero coefficient estimates.
+
+```{r}
+set.seed(7)
+cv.lasso <- cv.glmnet(predictor_mtx,response_vtr,alpha=1,
+                      lambda = exp(seq(-10,-1,length=100)))
+plot(cv.lasso)
+
+# trace plot
+plot_glmnet(cv.lasso$glmnet.fit)
+
+# coefficients of final model
+predict(cv.lasso,s="lambda.1se",type="coefficients")
+
+lasso_pred <- predict(cv.lasso,s="lambda.1se",newx = predictor_mtx_test)
+mse(sol_test$solubility,lasso_pred[,1])
+
+```
+
+The mean squared error is `r mse(sol_test$solubility,lasso_pred[,1])`.
+
+We use caret to redo lasso to see change of MSE.
+
+```{r}
+set.seed(7)
+lasso.fit <- train(predictor_mtx,response_vtr,
+                   method="glmnet",
+                   tuneGrid = expand.grid(alpha=1,
+                                          lambda=exp(seq(-10,1,length=100))),
+                   trControl = ctrl1)
+plot(lasso.fit,xTrans = function(predictor_mtx)log(predictor_mtx))
+
+lasso.fit$bestTune
+coef(lasso.fit$finalModel,lasso.fit$bestTune$lambda)
+
+pred.lasso <- predict(lasso.fit,s=lasso.fit$bestTune$lambda,
+                      newdata = predictor_mtx_test)
+
+mse(sol_test$solubility,pred.lasso)
+
+(lasso.info <- postResample(predict(lasso.fit,predictor_mtx_test),
+                            sol_test$solubility))
+
+```
+
+The mean square error of fitting lasso using caret is `r mse(sol_test$solubility,pred.lasso)`.
+
+# Fit a principle component regression model on the training data, with M chosen by cross-validation. Report the test error, along with the value of M selected by cross-validation.
+
+```{r}
+set.seed(7)
+pcr.mod <- pcr(solubility~.,
+               data=sol_train,
+               scale=TRUE,
+               validation="CV") 
+summary(pcr.mod)
+
+validationplot(pcr.mod,val.type = "MSEP",legendpos="topright")
+
+cv.mse <- RMSEP(pcr.mod)
+ncomp.cv <- which.min(cv.mse$val[1,,])-1
+ncomp.cv
+
+pcr_pred <- predict(pcr.mod,newdata = predictor_mtx_test,
+                    ncomp = ncomp.cv)
+mse(sol_test$solubility,pcr_pred)
+
+```
+
+The mean square error of fitting PCR is `r mse(sol_test$solubility,pcr_pred)`.
+
+```{r}
+set.seed(7)
+pcr.fit <- train(predictor_mtx,response_vtr,
+                 method = "pcr",
+                 tuneGrid = data.frame(1:228),
+                 trControl = ctrl1,
+                 preProc=c("center","scale"))
+
+trans <- preProcess(predictor_mtx,method = c("center","scale"))
+pred.pcr <- predict(pcr.fit$finalModel,newdata = predict(trans,predictor_mtx_test),
+                    ncomp = pcr.fit$bestTune$ncomp)
+
+mse(sol_test$solubility,pred.pcr)
+
+(pcr.info <- postResample(predict(pcr.fit,predictor_mtx_test),
+                          sol_test$solubility))
+
+```
+
+The mean square error of fitting PCR using caret is `r mse(sol_test$solubility,pred.pcr)`.
+
+# Brieﬂy discuss the results obtained in (a)∼(d).
+
+```{r}
+resamp <- resamples(list(lm = lm.fit,
+                         ridge = ridge.fit,
+                         lasso = lasso.fit,
+                         pcr = pcr.fit))
+summary(resamp)
+
+```
+
+
 
 
 
