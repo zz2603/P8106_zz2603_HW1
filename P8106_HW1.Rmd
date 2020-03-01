@@ -299,7 +299,7 @@ summary(resamp)
 
 ```
 
-* The MSE of fitting linear model to test dataset is `r mse(sol_test$solubility,linear_pred)`.
+* The MSE of fitting linear model to test dataset is `r mse(sol_test$solubility,linear_pred)`.The MSE by fitting linear error using caret is `r mse(sol_test$solubility,pred.lm)`.
 
 * The MSE of fitting ridge model to test dataset is `r mse(sol_test$solubility,pred.ridge)`. MSE using Caret is `r mse(sol_test$solubility,pred.ridge)`.
 
@@ -307,7 +307,7 @@ summary(resamp)
 
 * The MSE of fitting PCR to test dataset is `r mse(sol_test$solubility,pcr_pred)`. MSE using Caret is `r mse(sol_test$solubility,pred.pcr)`.
 
-
+I used same method of cross validation. Using the caret, model of lasso regression has  
 
 
 
