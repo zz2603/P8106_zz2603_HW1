@@ -300,6 +300,14 @@ summary(resamp)
 
 ```
 
+Create boxplot of RMSE for four regression models.
+
+```{r}
+bwplot(resamp,metric = "RMSE")
+```
+
+
+
 * The MSE of fitting linear model to test dataset is `r mse(sol_test$solubility,linear_pred)`.The MSE by fitting linear error using caret is `r mse(sol_test$solubility,pred.lm)`.
 
 * The MSE of fitting ridge model to test dataset is `r mse(sol_test$solubility,ridge_pred[,1])`. MSE using Caret is `r mse(sol_test$solubility,pred.ridge)`.
@@ -308,7 +316,15 @@ summary(resamp)
 
 * The MSE of fitting PCR to test dataset is `r mse(sol_test$solubility,pcr_pred)`. MSE using Caret is `r mse(sol_test$solubility,pred.pcr)`.
 
-I used same method of cross validation. Using the caret, model of lasso regression has  
+I used same method of cross validation. Using the caret, model of lasso regression has the smallest mean squared error. Through the output of resample function, lasso regression has smallest mean of RMSE and MAE. We can also find out this point from the boxplot. The lasso also have greatest mean of Rsquared value, which means how much percent of solubility were explained by the predictors.
+
+# Which model will you choose for predicting solubility?
+I will choose lasso regression to predict solubility, because it has the smallest MSE when fitting the test dataset. It also has smallest meanof RMSE and MAE values, and largest Rsquared value. 
+
+
+
+
+
 
 
 
